@@ -2106,7 +2106,6 @@ dependencies = [
  "ckb-ssri-std",
  "ckb-ssri-std-proc-macro",
  "ckb-std",
- "molecule",
  "serde",
  "serde_molecule",
 ]

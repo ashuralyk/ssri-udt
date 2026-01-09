@@ -1,7 +1,7 @@
 use alloc::{string::String, vec::Vec};
 use ckb_hash::new_blake2b;
 use ckb_ssri_std::{
-    public_module_traits::udt::UDT,
+    public_module_traits::udt::{ScriptLike, UDT},
     utils::high_level::{find_cell_data_by_out_point, find_out_point_by_type},
 };
 use ckb_std::{
@@ -20,7 +20,7 @@ use ckb_std::{
     high_level::load_script,
 };
 use serde::{Deserialize, Serialize};
-use serde_molecule::{from_slice, to_vec};
+use serde_molecule::{dynvec_serde, from_slice, to_vec};
 
 use crate::{
     config::TYPE_ID_SCRIPT_CODE_HASH,
@@ -103,6 +103,13 @@ impl SSRIMetadata {
             )
             .build())
     }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct ScriptLikeVec {
+    #[serde(with = "dynvec_serde")]
+    pub scripts: Vec<ScriptLike>,
 }
 
 pub struct SSRIUDT;

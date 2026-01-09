@@ -5,12 +5,12 @@
 #[cfg(test)]
 extern crate alloc;
 
-use alloc::{borrow::Cow, vec};
+use alloc::borrow::Cow;
 use ckb_ssri_std::{public_module_traits::udt::UDT, utils::should_fallback};
 use ckb_ssri_std_proc_macro::ssri_methods;
 use ckb_std::{
     ckb_types::{
-        packed::{Byte32, Bytes, Script, ScriptBuilder, Transaction},
+        packed::{Script, Transaction},
         prelude::*,
     },
     debug,
@@ -31,7 +31,6 @@ mod config;
 mod error;
 mod fallback;
 mod modules;
-mod molecule;
 mod utils;
 
 use error::Error;
@@ -56,16 +55,14 @@ fn program_entry_wrap() -> Result<(), Error> {
         "UDT.icon" => Ok(Cow::from(modules::SSRIUDT::icon()?.to_vec())),
         "UDT.transfer" => {
             debug!("program_entry_wrap | Entered UDT.transfer");
-            let to_lock_vec_molecule = molecule::ScriptVec::from_slice(decode_hex(argv[2].as_ref())?.as_slice()).map_err(|_|Error::MoleculeVerificationError)?;
-            let mut to_lock_vec: Vec<Script> = vec![];
-            for script in to_lock_vec_molecule.into_iter() {
-                let parsed_script = ScriptBuilder::default()
-                    .code_hash(Byte32::from_slice(script.as_reader().code_hash().to_entity().as_slice()).map_err(|_|Error::MoleculeVerificationError)?)
-                    .hash_type(script.as_reader().hash_type().to_entity())
-                    .args(Bytes::from_slice(script.as_reader().args().to_entity().as_slice()).map_err(|_|Error::MoleculeVerificationError)?)
-                    .build();
-                to_lock_vec.push(parsed_script);
-            }
+            let to_lock_vec_molecule: modules::ScriptLikeVec = from_slice(decode_hex(argv[2].as_ref())?.as_slice(), false).map_err(|_|Error::MoleculeVerificationError)?;
+            let to_lock_vec = to_lock_vec_molecule.scripts.into_iter().map(|script|
+                Script::new_builder()
+                    .code_hash(script.code_hash.pack())
+                    .hash_type(script.hash_type.into())
+                    .args(script.args.pack())
+                    .build()
+            ).collect::<Vec<Script>>();
 
             let to_amount_bytes = decode_hex(argv[3].as_ref())?;
             let to_amount_vec: Vec<u128> = to_amount_bytes[4..]
@@ -89,16 +86,14 @@ fn program_entry_wrap() -> Result<(), Error> {
         },
         "UDT.mint" => {
             debug!("program_entry_wrap | Entered UDT.mint");
-            let to_lock_vec_molecule = molecule::ScriptVec::from_slice(decode_hex(argv[2].as_ref())?.as_slice()).map_err(|_|Error::MoleculeVerificationError)?;
-            let mut to_lock_vec: Vec<Script> = vec![];
-            for script in to_lock_vec_molecule.into_iter() {
-                let parsed_script = ScriptBuilder::default()
-                    .code_hash(Byte32::from_slice(script.as_reader().code_hash().to_entity().as_slice()).map_err(|_|Error::MoleculeVerificationError)?)
-                    .hash_type(script.as_reader().hash_type().to_entity())
-                    .args(Bytes::from_slice(script.as_reader().args().to_entity().as_slice()).map_err(|_|Error::MoleculeVerificationError)?)
-                    .build();
-                to_lock_vec.push(parsed_script);
-            }
+            let to_lock_vec_molecule: modules::ScriptLikeVec = from_slice(decode_hex(argv[2].as_ref())?.as_slice(), false).map_err(|_|Error::MoleculeVerificationError)?;
+            let to_lock_vec = to_lock_vec_molecule.scripts.into_iter().map(|script|
+                Script::new_builder()
+                    .code_hash(script.code_hash.pack())
+                    .hash_type(script.hash_type.into())
+                    .args(script.args.pack())
+                    .build()
+            ).collect::<Vec<Script>>();
             debug!("program_entry_wrap | to_lock_vec: {:?}", to_lock_vec);
 
             let to_amount_bytes = decode_hex(argv[3].as_ref())?;
